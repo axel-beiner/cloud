@@ -1,10 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+<head>
+  <title>test website</title>
+</head>
+
+<body>
+
+<h1><?php echo "Server '".gethostname()."' - private IP address = ".$_SERVER["SERVER_ADDR"]." / public IP = ".$_SERVER["SERVER_NAME"]; ?></h1>
+
+
+<form method="post" action="index.php">
+        <input type="texte" name="pseudo" />
+        <input type="submit" value="Connection" />
+</form>
+
+<!-- Signer et dater la page, c'est une question de politesse! -->
+
 <?php
-echo "Server '".gethostname()."' - private IP address = ".$_SERVER["SERVER_ADDR"]." / private public IP = ".$_SERVER["SERVER_NAME"];
+//error_reporting(E_ALL); ini_set('display_errors', '1');
+
+
+// test attack XSS
+echo "Bonjour ".$_POST['pseudo']." !";
 
 
 // https://www.linuxtricks.fr/wiki/php-passer-de-mysql-a-mysqli-requetes-de-base
 
-$mysqli = new mysqli('10.12.0.6', 'userweb', 'userweb@123', 'dbtest');
+$mysqli = new mysqli('testpaasmysql.mysql.database.azure.com', 'adminmysql@testpaasmysql', 'lab1234!', 'dbtest'); // connexion PaaS Mysql
+//$mysqli = new mysqli('10.12.0.8', 'userweb', 'userweb@123', 'dbtest'); // connexion IaaS Mysql
+
 if ($mysqli->connect_errno) {
     echo "Errno: " . $mysqli->connect_errno . "\n";
     echo "Error: " . $mysqli->connect_error . "\n";
@@ -13,22 +37,47 @@ if ($mysqli->connect_errno) {
 
 $res = $mysqli->query("SELECT * FROM clients;");
 
+echo "<h2>Clients list :</h2>";
 echo "<table>";
-echo "<tr><td>Client name</td><td>Contract number</td><td>Subscription date</td></tr>";
+echo "<tr><td><b>Client name</td><td><b>Contract number</td><td><b>Subscription date</td></tr>";
 while ($data = mysqli_fetch_array($res)) {
-echo "<tr><td>".$data['nom']."</td><td>".$data['numcontrat']."</td><td>".$data['date-inscription']."</td></tr>";
+echo "<tr><td>".$data['name']."</td><td>".$data['numcontract']."</td><td>".$data['date-subscription']."</td></tr>";
 }
 echo "</table>";
 
 
-$res2 = $mysqli->query("SELECT nom,date_achat,montant FROM clients,commands WHERE commands.id_client = clients.id_client;");
 
+$res2 = $mysqli->query("SELECT * FROM clients,commands WHERE commands.id_client = clients.id_client;");
+
+echo "<br><H2>Commands list :</h2><table>";
+echo "<tr><td><b>Client name</td><td><b>Date</td><td><b>Price</td></tr>";
+while ($data = mysqli_fetch_array($res2)) {
+echo "<tr><td>".$data['name']."</td><td>".$data['date_command']."</td><td>".$data['price']." $</td></tr>";
+}
+echo "</table>";
+
+?>
+
+<h1>Client research :</h1>
+<form method="get" action="index.php">
+        <input type="texte" name="clientname" />
+        <input type="submit" value="Search" />
+</form>
+
+<?php
+// test attack MYSQL injection
+
+$res3 = $mysqli->query("SELECT * FROM clients WHERE name='".$_GET['clientname']."';");
+
+echo "<h2>Clients detail :</h2>";
 echo "<table>";
-echo "<tr><td>Client name</td><td>Date</td><td>Cost</td></tr>";
-while ($data2 = mysqli_fetch_array($res2)) {
-echo "<tr><td>".$data2['nom']."</td><td>".$data2['date_achat']."</td><td>".$data2['montant']."</td></tr>";
+echo "<tr><td><b>Client name</td><td><b>Contract number</td><td><b>Subscription date</td></tr>";
+while ($data = mysqli_fetch_array($res3)) {
+echo "<tr><td>".$data['name']."</td><td>".$data['numcontract']."</td><td>".$data['date-subscription']."</td></tr>";
 }
 echo "</table>";
 
 mysqli_close($conn);
 ?>
+</body>
+</html>
